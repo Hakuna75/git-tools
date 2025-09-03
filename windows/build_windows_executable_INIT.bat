@@ -1,0 +1,1 @@
+@CALL "%~dp0build_windows_executable.bat" /INIT
