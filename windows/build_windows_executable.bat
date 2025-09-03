@@ -36,11 +36,20 @@ PAUSE
 GOTO :EOF
 
 :InitializeEnvironment
-ECHO.
-ECHO NOTE: This script needs to run as administrator
-ECHO Press a key to use Microsoft winget to install Python and the required Python packages...
-PAUSE
+REM Testing if batch file is running with elevated privileges
+NET FILE 1>NUL 2>NUL
+IF '%errorlevel%' == '0' (
+  ECHO Script %~dpfx0 is running with elevated privileges. Parameters: %1 %2 %3 %4 %5 %6 %7 %8 %9
+) ELSE ( 
+  ECHO.
+  ECHO NOTE: This script needs to run as administrator, it will attempt to self elevate when necessary.
+  ECHO Press a key to use Microsoft winget to install Python and the required Python packages...
+  PAUSE
+  SETLOCAL EnableDelayedExpansion
+  GOTO :selfElevateBatchFile
+)
 
+REM Everything below here only runs if elevated privileges are available
 ECHO.
 ECHO Installing/updating Python...
 winget install --exact --id Python.Python.3.13 --scope machine --force --accept-package-agreements
@@ -57,4 +66,15 @@ pip.exe install --trusted-host pypi.org --trusted-host files.pythonhosted.org ^
 ECHO.
 ECHO Finished!
 PAUSE
+GOTO :EOF
+
+:selfElevateBatchFile
+ECHO.
+ECHO **************************************
+ECHO Invoking UAC for Privilege Escalation
+ECHO **************************************
+ECHO Set UAC = CreateObject^("Shell.Application"^) > "%temp%\OEgetPrivileges.vbs"
+ECHO UAC.ShellExecute "%~dpfx0", "%1 %2 %3 %4 %5 %6 %7 %8 %9", "", "runas", 1 >> "%temp%\OEgetPrivileges.vbs"
+"%temp%\OEgetPrivileges.vbs"
+REM Close the batch file; it will be restarted with elevated privileges
 GOTO :EOF
